@@ -4,13 +4,20 @@ set -e  # Exit on error
 DPI=96
 RES_AND_DEPTH=${WIDTH}x${HEIGHT}x24
 
-# Function to check if Xvfb is already running
+# Function to check if Xvfb is already running and responsive
 check_xvfb_running() {
-    if [ -e /tmp/.X${DISPLAY_NUM}-lock ]; then
-        return 0  # Xvfb is already running
-    else
-        return 1  # Xvfb is not running
+    if [ ! -e /tmp/.X${DISPLAY_NUM}-lock ]; then
+        return 1  # lock file absent -> not running
     fi
+
+    # Try a quick query; if it works, X server is alive
+    if DISPLAY=:${DISPLAY_NUM} xdpyinfo >/dev/null 2>&1; then
+        return 0  # running and healthy
+    fi
+
+    echo "Stale Xvfb lock detected – cleaning up" >&2
+    rm -f /tmp/.X${DISPLAY_NUM}-lock
+    return 1  # treat as not running so we start fresh
 }
 
 # Function to check if Xvfb is ready
@@ -27,9 +34,9 @@ wait_for_xvfb() {
     return 0
 }
 
-# Check if Xvfb is already running
+# Check if Xvfb is already running and healthy
 if check_xvfb_running; then
-    echo "Xvfb is already running on display ${DISPLAY}"
+    echo "Xvfb is already running and healthy on display ${DISPLAY}"
     exit 0
 fi
 

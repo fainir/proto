@@ -2,9 +2,12 @@
 Entrypoint for streamlit, see https://docs.streamlit.io/
 """
 
+import os
+import sys
+# ensure project root is on Python path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
 import asyncio
 import base64
-import os
 import subprocess
 import traceback
 from contextlib import contextmanager
@@ -77,6 +80,72 @@ CONFIG_DIR = PosixPath("~/.anthropic").expanduser()
 API_KEY_FILE = CONFIG_DIR / "api_key"
 STREAMLIT_STYLE = """
 <style>
+    /* ------------------------------------------------------------------ */
+    /*  Global layout / background                                         */
+    /* ------------------------------------------------------------------ */
+
+    /* Neutral light background (similar to attached design) */
+    [data-testid="stAppViewContainer"] {
+        background-color: #e9e5df;  /* warm grey-beige */
+    }
+
+    /* Remove padding around the main block to give full-width feel */
+    .stAppViewBlockContainer {
+        padding-top: 0;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Chat message layout                                                */
+    /* ------------------------------------------------------------------ */
+
+    [data-testid="stChatMessage"] {
+        display: flex;
+        margin: 6px 0;
+    }
+
+    /* Keep avatars visible (no display: none) */
+
+    /* Limit message width for readability */
+    [data-testid="stChatMessage"] .stVerticalBlock {
+        max-width: 90%;
+    }
+
+    /* Base card look for all Markdown/Code inside chat */
+    [data-testid="stChatMessage"] .stMarkdown,
+    [data-testid="stChatMessage"] pre,
+    [data-testid="stChatMessage"] code {
+        padding: 14px 18px;
+        border-radius: 10px;
+        line-height: 1.5em;
+        font-size: 0.92rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    /* Assistant message – white card on left */
+    [data-testid="stChatMessage"]:not(:nth-child(even)) .stMarkdown {
+        background-color: #ffffff;
+        color: #222;
+        border: 1px solid #e3e3e3;
+    }
+
+    /* User message – light blue/grey card on right */
+    [data-testid="stChatMessage"]:nth-child(even) {
+        justify-content: flex-end;
+    }
+    [data-testid="stChatMessage"]:nth-child(even) .stMarkdown {
+        background-color: #f1f5fb;
+        color: #222;
+        border: 1px solid #d7dce3;
+    }
+
+    /* Dark card variant for tool / system messages (detected by dark background text colour) */
+    [data-testid="stChatMessage"] .stMarkdown:has(strong:contains("Process:")),
+    [data-testid="stChatMessage"] .stMarkdown:has(code) {
+        background-color: #272727;
+        color: #f7f7f7;
+        border: none;
+    }
+
     /* Highlight the stop button in red */
     button[kind=header] {
         background-color: rgb(255, 75, 75);
@@ -86,9 +155,127 @@ STREAMLIT_STYLE = """
     button[kind=header]:hover {
         background-color: rgb(255, 51, 51);
     }
-     /* Hide the streamlit deploy button */
+
+    /* Hide the streamlit deploy button */
     .stAppDeployButton {
         visibility: hidden;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Header bar                                                        */
+    /* ------------------------------------------------------------------ */
+
+    .custom-chat-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        background: #ffffff;
+        border-bottom: 1px solid #e3e3e3;
+        display: flex;
+        align-items: center;
+        padding: 10px 20px;
+        gap: 12px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #222;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .custom-chat-header .back-arrow {
+        cursor: pointer;
+        font-size: 1.2rem;
+        line-height: 1;
+    }
+
+    .custom-chat-header .title {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .custom-chat-header .new-chat-btn {
+        background: #ffffff;
+        border: 1px solid #dadada;
+        border-radius: 6px;
+        padding: 4px 10px;
+        cursor: pointer;
+        font-size: 0.8rem;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Bottom input bar                                                  */
+    /* ------------------------------------------------------------------ */
+
+    [data-testid="stChatInput"] {
+        /* Light bar across the bottom of the screen */
+        background: #ffffff !important;
+        border-top: 1px solid #e3e3e3;
+        padding: 8px 16px 50px 16px; /* extra bottom padding for icon row */
+    }
+
+    /* Remove dark background from chat input container (Streamlit v1.33+) */
+    [data-testid="stChatInput"] .stChatInputContainer {
+        background: transparent; /* keep container transparent so the white textbox shows */
+    }
+
+    /* style default send button inside chat input */
+    [data-testid="stChatInput"] .stChatInputContainer button {
+        background: #6d6d6d !important;
+        border: none;
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        color: #ffffff !important;
+    }
+
+    /* floating plus becomes inline inside bottom area */
+    .floating-plus {
+        position: fixed;
+        bottom: 60px; /* sits just above bar */
+        left: 20px;
+        z-index: 1001;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 2px solid #3b3b3b;
+        background: transparent;
+        color: #3b3b3b;
+    }
+
+    .floating-plus:hover {
+        background: #f5f5f5;
+    }
+
+    /* Ensure entire page background stays light, removing default black */
+    html, body, section.main, .block-container, #root, .stApp {
+        background: #e9e5df !important;
+    }
+
+    /* Hide Streamlit built-in dark header so custom header replaces it */
+    header[data-testid="stHeader"], .stHeader {
+        display: none !important;
+    }
+
+    /* Add space so first chat message isn't hidden under fixed header */
+    [data-testid="stAppViewContainer"] {
+        padding-top: 60px; /* approx header height */
+    }
+
+    /* Hide Streamlit sidebar toggle arrow */
+    [data-testid="stSidebarMenu"], .stSidebarToggle {
+        display: none !important;
+    }
+
+    /* Streamlit uses .stFixedWidget for bottom chat input area */
+    .stFixedWidget {
+        background: #e9e5df !important; /* match overall page background */
+    }
+
+    .stFixedWidget * {
+        background-color: #e9e5df !important;
     }
 </style>
 """
@@ -136,6 +323,9 @@ def setup_state():
         st.session_state.token_efficient_tools_beta = False
     if "in_sampling_loop" not in st.session_state:
         st.session_state.in_sampling_loop = False
+    # Initialize tool_versions to avoid missing-key errors on first load
+    if "tool_versions" not in st.session_state:
+        st.session_state.tool_versions = st.session_state.tool_version
 
 
 def _reset_model():
@@ -170,10 +360,10 @@ async def main():
 
     st.markdown(STREAMLIT_STYLE, unsafe_allow_html=True)
 
-    st.title("Claude Computer Use Demo")
-
-    if not os.getenv("HIDE_WARNING", False):
-        st.warning(WARNING_TEXT)
+    # Hide title and warning banner to simplify UI (WhatsApp-style minimal look)
+    # st.title("Nir Computer Use")
+    # if not os.getenv("HIDE_WARNING", False):
+    #     st.warning(WARNING_TEXT)
 
     with st.sidebar:
 
@@ -260,9 +450,27 @@ async def main():
         else:
             st.session_state.auth_validated = True
 
-    chat, http_logs = st.tabs(["Chat", "HTTP Exchange Logs"])
+    # Render custom header bar (back arrow, title, new chat)
+    st.markdown(
+        """
+        <div class=\"custom-chat-header\">
+            <span class=\"back-arrow\">&#x2190;</span>
+            <span class=\"title\">DoggyDate Plan (Autopilot V3)</span>
+            <button class=\"new-chat-btn\">+ New Chat</button>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Replace tabbed layout with a single chat area and a separate container for HTTP logs
+    chat = st.container()
+    http_logs = st.container()  # do not wrap in expander to avoid nested expander error
+
+    # floating plus button on bottom-left corner for visual parity (non-functional)
+    st.markdown("<button class='floating-plus'>+</button>", unsafe_allow_html=True)
+
     new_message = st.chat_input(
-        "Type a message to send to Claude to control the computer..."
+        "Ask anything..."
     )
 
     with chat:
@@ -283,10 +491,6 @@ async def main():
                             message["role"],
                             cast(BetaContentBlockParam | ToolResult, block),
                         )
-
-        # render past http exchanges
-        for identity, (request, response) in st.session_state.responses.items():
-            _render_api_response(request, response, identity, http_logs)
 
         # render past chats
         if new_message:
@@ -430,7 +634,7 @@ def _api_response_callback(
     response_state[response_id] = (request, response)
     if error:
         _render_error(error)
-    _render_api_response(request, response, response_id, tab)
+    # Skip rendering of API exchanges to hide requests from UI
 
 
 def _tool_output_callback(

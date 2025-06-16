@@ -1,4 +1,4 @@
-FROM docker.io/ubuntu:22.04
+FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBIAN_PRIORITY=high
@@ -15,6 +15,9 @@ RUN apt-get update && \
     sudo \
     mutter \
     x11vnc \
+    dbus-x11 \
+    xfce4 \
+    xfce4-goodies \
     # Python/pyenv reqs
     build-essential \
     libssl-dev  \
@@ -33,7 +36,7 @@ RUN apt-get update && \
     liblzma-dev \
     # Network tools
     net-tools \
-    netcat \
+    netcat-openbsd \
     # PPA req
     software-properties-common && \
     # Userland apps
@@ -49,6 +52,12 @@ RUN apt-get update && \
     galculator \
     pcmanfm \
     unzip && \
+    apt-get clean
+
+# Install Google Chrome (available for amd64 builds)
+RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && apt-get install -y --no-install-recommends google-chrome-stable && \
     apt-get clean
 
 # Install noVNC

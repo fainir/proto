@@ -18,4 +18,10 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
 pip install -r dev-requirements.txt
-pre-commit install
+
+# Only install pre-commit hooks if we're in a Git repository
+if command -v git >/dev/null 2>&1 && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    pre-commit install
+else
+    echo "Skipping pre-commit install; not a git repository."
+fi
