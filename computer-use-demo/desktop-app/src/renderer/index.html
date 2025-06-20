@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Computer Use Demo</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Floating Dashboard Toggle -->
+        <div class="dashboard-toggle" id="dashboardToggle">
+            <button class="toggle-btn" title="Dashboard">
+                <i class="fas fa-tachometer-alt"></i>
+            </button>
+        </div>
+
+        <!-- Sliding Dashboard Panel -->
+        <div class="dashboard-sidebar" id="dashboardSidebar">
+            <div class="dashboard-header">
+                <h3><i class="fas fa-tachometer-alt"></i> Dashboard</h3>
+                <button class="close-btn" id="closeDashboard" title="Close Dashboard">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="dashboard-content">
+                <!-- VM Status -->
+                <div class="dash-section">
+                    <h4>VM Status</h4>
+                    <div class="status-display">
+                        <div class="status-indicator" id="statusIndicator"></div>
+                        <span id="statusText">Initializing...</span>
+                    </div>
+                </div>
+
+                <!-- VM Controls -->
+                <div class="dash-section">
+                    <h4>Controls</h4>
+                    <div class="control-buttons">
+                        <button class="btn btn-primary btn-sm" id="startVmBtn">
+                            <i class="fas fa-play"></i> Start
+                        </button>
+                        <button class="btn btn-secondary btn-sm" id="stopVmBtn">
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
+                        <button class="btn btn-outline btn-sm" id="restartVmBtn">
+                            <i class="fas fa-redo"></i> Restart
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Access -->
+                <div class="dash-section">
+                    <h4>Access</h4>
+                    <div class="access-buttons">
+                        <button class="btn btn-link btn-sm" id="openStreamlitBtn">
+                            <i class="fas fa-comments"></i> Chat
+                        </button>
+                        <button class="btn btn-link btn-sm" id="openVncBtn">
+                            <i class="fas fa-desktop"></i> Desktop
+                        </button>
+                        <button class="btn btn-link btn-sm" id="openCombinedBtn">
+                            <i class="fas fa-window-maximize"></i> Combined
+                        </button>
+                    </div>
+                </div>
+
+                <!-- System Info -->
+                <div class="dash-section">
+                    <h4>System</h4>
+                    <div class="system-info">
+                        <div class="info-item">
+                            <span class="info-label">Container:</span>
+                            <span class="info-value" id="containerStatus">Stopped</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">CPU:</span>
+                            <span class="info-value" id="cpuUsage">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Memory:</span>
+                            <span class="info-value" id="memoryUsage">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div class="dash-section">
+                    <h4>Settings</h4>
+                    <button class="btn btn-outline btn-sm" id="settingsBtn">
+                        <i class="fas fa-cog"></i> Configuration
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Claude Interface -->
+        <div class="claude-interface" id="claudeInterface">
+            <div class="interface-loading" id="interfaceLoading">
+                <div class="loading-content">
+                    <div class="loading-spinner"></div>
+                    <h3>Starting Claude Computer Use Demo</h3>
+                    <p id="loadingMessage">Initializing VM...</p>
+                    <button class="btn btn-primary" id="startInterfaceBtn" style="display: none;">
+                        <i class="fas fa-play"></i> Start VM to Begin
+                    </button>
+                </div>
+            </div>
+            
+            <iframe 
+                id="claudeFrame"
+                src="about:blank"
+                style="display: none;"
+                width="100%"
+                height="100%"
+                frameborder="0">
+            </iframe>
+        </div>
+
+        <!-- Settings Modal -->
+        <div class="modal" id="settingsModal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Settings</h3>
+                    <button class="close-btn" id="closeSettingsModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-group">
+                        <label for="apiKeyInput">Anthropic API Key:</label>
+                        <input type="password" id="apiKeyInput" placeholder="Enter your API key">
+                        <small>Your API key is stored securely and only used for Claude interactions.</small>
+                    </div>
+                    <div class="setting-group">
+                        <label for="resolutionSelect">Display Resolution:</label>
+                        <select id="resolutionSelect">
+                            <option value="1024x768">1024x768</option>
+                            <option value="1280x720">1280x720</option>
+                            <option value="1920x1080">1920x1080</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="cancelSettingsBtn">Cancel</button>
+                    <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Toast -->
+        <div class="toast" id="statusToast" style="display: none;">
+            <div class="toast-content">
+                <div class="toast-icon" id="toastIcon"></div>
+                <div class="toast-message" id="toastMessage"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
